@@ -1,19 +1,22 @@
 """ Unit tests for all the methods in HW09 """
 import unittest
-from Student_Repository_MeghanaBhat_Manikal import  Student, Instructor, University
+from Student_Repository_MeghanaBhat_Manikal import  Student, Instructor, University, Major
 
 
 class StudentTest(unittest.TestCase):
     """ Unit tests for all the methods in Student """
 
-    def test_add_course(self)-> None:
+    def test_add_grade(self)-> None:
+        """ to test add_grades method"""
         st = Student('10446083', 'Meghana', 'Computer_Science')
         st.add_grade('SSW-810-A', 'A')
-        st.add_grade('SSW-810-A', 'A-')
-        st.add_grade('SSW-812-A', 'A')
+        st.add_grade('SSW-810-C', 'A-')
+        st.add_grade('SSW-812-B', 'A')
+        st.add_grade('SSW-812-A', 'D')
 
-        self.assertEqual(len(st.courses_grades), 2)
-        self.assertEqual(st.courses_grades['SSW-810-A'], 'A-')
+        self.assertEqual(len(st.courses_grades), 4)
+        self.assertEqual(len(st.passed_courses), 3)
+        self.assertEqual(st.courses_grades['SSW-810-C'], 'A-')
 
 
     def test_get_student_summary(self) -> None:
@@ -28,6 +31,60 @@ class StudentTest(unittest.TestCase):
         print(st_tuple)
 
         self.assertEqual(st_tuple[0],'10446083')
+
+    def test_add_remaining(self)-> None:
+        """ to test add_remaining method"""
+        
+        mj = Major('SFEN', 'R' , 'SSW-810')
+        mj.add_course('R', 'Python')
+        mj.add_course('E', 'Agile')
+        mj.add_course('R', 'OS')
+
+        st = Student('10446083', 'Meghana', 'SFEN')
+        st.add_remaining(mj)
+        self.assertEqual(len(st.remaining_ec), 1)
+        self.assertEqual(len(st.remaining_rc), 3)
+    
+    def test_calc_gpa(self)->None:
+        """ to test calc_gpa method """
+        st = Student('10446083', 'Meghana', 'Computer_Science')
+        st.add_grade('SSW-810-A', 'A')
+        st.add_grade('SSW-810-C', 'A-')
+        st.add_grade('SSW-812-B', 'A')
+        st.add_grade('SSW-812-A', 'D')
+        st_tuple: Tuple = st.get_student_summary()        
+        st.calc_gpa()          
+        self.assertEqual(round(st.gpa,2),3.92)
+
+
+
+class MajorTest(unittest.TestCase):
+    def test_get_major_summary(self) -> None:
+        """ to test get_student_summary method"""
+        
+        major = Major('SFEN', 'R', 'SSW 810')
+        major.add_course('R', 'SSW 810')
+        
+        major_tuple: Tuple = major.get_major_summary('SFEN')
+        print(major_tuple)
+
+        self.assertEqual(major_tuple[0],'SFEN')
+
+    def test_add_course(self) -> None:
+        """ to test add_course method of Major class """
+        major = Major('SFEN', 'R', 'SSW 810')
+        major.add_course('R', 'SSW 811')
+
+        self.assertEqual(len(major.rcourses), 2)
+
+    def test_populate_major(self)-> None:
+        """ unittest for populate_major() """
+
+        uni = University() 
+        uni.populate_major('./Stevens')
+
+        self.assertEqual(len(uni.majors), 2)
+        self.assertEqual(uni.majors.__contains__('SFEN'), True)
     
 class UniversityTest(unittest.TestCase):
     """ Unit tests for all the methods in University """
@@ -65,14 +122,14 @@ class UniversityTest(unittest.TestCase):
         """ Helper function to test FileNotFoundError"""
     
         uni = University()
-        for cwid, name, major in uni.file_reader(directory, path, 3, sep='\t', header=False):   
+        for cwid, name, major in uni.file_reader(directory, path, 3, sep='\t', header=True):   
             print(tuple([cwid, name, major]))
     
     def value_error_function(self, directory:str, path: str)->None:
         """ Helper function to test ValueError"""
 
         uni = University()
-        for cwid, name, major in uni.file_reader(directory, path, 2, sep='\t', header=False):   
+        for cwid, name, major in uni.file_reader(directory, path, 2, sep=';', header=True):   
             print(tuple([cwid, name, major]))
 
     def test_file_reader(self)-> None:
@@ -81,7 +138,7 @@ class UniversityTest(unittest.TestCase):
         lst: list = []
 
         uni = University()
-        for cwid, name, major in uni.file_reader("Stevens","students.txt", 3, sep='\t', header=False):   
+        for cwid, name, major in uni.file_reader("Stevens","students.txt", 3, sep=';', header=True):   
             lst.append(tuple([cwid, name, major]))
 
         self.assertEqual(10, len(lst))
@@ -99,11 +156,13 @@ class UniversityTest(unittest.TestCase):
         uni.populate_students('./Stevens')
         uni.populate_instructor('./Stevens')
         uni.populate_grades('./Stevens')
-        print("Hello")
+        uni.populate_major('./Stevens')
+        
         self.assertEqual(len(uni.students['10103'].courses_grades), 4)
         self.assertEqual(uni.students['10103'].courses_grades['CS 501'], 'B')
         self.assertEqual(len(uni.instructors['98760'].courses_scount), 4)
         self.assertEqual(uni.instructors['98760'].courses_scount['SYS 611'], 2)
+        uni.pretty_print_major()
         uni.pretty_print_students()
         uni.pretty_print_instructor()
         
@@ -114,6 +173,7 @@ class UniversityTest(unittest.TestCase):
         uni = University()
         uni.populate_students('./Stevens')
         uni.populate_instructor('./Stevens')
+        
         self.assertEqual(uni.valid_grade('10103','98765'), True)
         with self.assertRaises(ValueError):_= uni.valid_grade('1010','98765')
         with self.assertRaises(ValueError):_= uni.valid_grade('10103','9876')
