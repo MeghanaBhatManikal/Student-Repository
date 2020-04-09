@@ -17,7 +17,7 @@ class Major:
 
     def add_course(self, r_or_e: str, course: str)-> None:
         """ adding courses into required or elective courses to the respective set """
-        if(r_or_e == 'R'):
+        if r_or_e == 'R':
             self.rcourses.add(course)
         else:
             self.ecourses.add(course)
@@ -175,7 +175,7 @@ class University:
             raise NotADirectoryError("given path is not a valid directory")
 
         if len(files) < 4:
-            raise ValueError("Number of file in the director is not equal to 4")
+            raise ValueError("Number of file in the directory is not equal to 4")
 
         # print(files)
 
@@ -300,11 +300,19 @@ class University:
                 pt.add_row(instructor.get_instructor_summary(course))
         print(pt)
 
-
         
 def main() -> None:
-    directory_name = './Stevens'
-    uni = University(directory_name)
-    
+    directory_name = './Stevens/'
+    try:
+        uni = University(directory_name)    
+    except ValueError as ve:
+        print(ve)
+    except FileNotFoundError as fne:
+        print(fne)
+    except NotADirectoryError as nd:
+        print(nd)
+    except TypeError as te:
+        print(te)
+  
 if __name__ == '__main__':
     main()
