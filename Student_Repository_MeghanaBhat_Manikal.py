@@ -5,6 +5,8 @@ from os import listdir
 from prettytable import PrettyTable
 from collections import defaultdict
 import os
+import sqlite3
+
 
 class Major:
     def __init__(self,major: str, r_or_e: str, course: str)-> None:
@@ -133,6 +135,17 @@ class University:
     students: Dict[str, Student]
     instructors: Dict[str, Instructor]
     majors: Dict[str, Major]
+    
+
+    
+
+    def student_grades_table_db(self, db_path) -> None:
+        """ This method runs the query and yileds the each row"""
+
+        db: sqlite3.Connection = sqlite3.connect(db_path)
+        for row in db.execute("select S.Name Name,S.CWID, G.Course, G.Grade, I.Name Instructor from students S, grades G, instructors I where S.CWID = G.StudentCWID and I.CWID = G.InstructorCWID Order By S.Name"):
+            yield(row)
+        db.close()
 
     def __init__(self, directory: Optional[str]=None) -> None:
         """ Initializing the University"""
@@ -151,6 +164,9 @@ class University:
         self.pretty_print_major()
         self.pretty_print_students()
         self.pretty_print_instructor()
+        self.pretty_print_student_grade()
+        
+        
         
 
     def populate_university(self, directory: str) -> None:
@@ -205,21 +221,21 @@ class University:
         """ populates the instructor dict"""
 
         # for cwid, name, dept in self.file_reader(directory + "/instructors.txt", 3, sep='\t', header=False):
-        for cwid, name, dept in self.file_reader(directory ,"instructors.txt", 3, sep='|', header=True):
+        for cwid, name, dept in self.file_reader(directory ,"instructors.txt", 3, sep='\t', header=True):
             instructor = Instructor(cwid, name, dept)
             self.instructors[cwid] = instructor
 
     def populate_students(self,directory) -> None:
         """ populates the student dict"""
         
-        for cwid, name, major in self.file_reader(directory , "students.txt", 3, sep=';', header=True):
+        for cwid, name, major in self.file_reader(directory , "students.txt", 3, sep='\t', header=True):
             student = Student(cwid, name, major)
             self.students[cwid] = student
     
     def populate_grades(self,directory) -> None:
         """ populates the gardes dict """
         
-        for s_cwid, course, grade, i_cwid in self.file_reader(directory, "grades.txt", 4, sep='|', header=True):
+        for s_cwid, course, grade, i_cwid in self.file_reader(directory, "grades.txt", 4, sep='\t', header=True):
             if self.valid_grade(s_cwid, i_cwid):
                 self.students[s_cwid].add_grade(course, grade)
                 self.instructors[i_cwid].add_course(course)
@@ -298,6 +314,15 @@ class University:
         for instructor in self.instructors.values():
             for course in instructor.courses_scount:
                 pt.add_row(instructor.get_instructor_summary(course))
+        print(pt)
+
+    def pretty_print_student_grade(self) -> None:
+        """Prints the pretty table for student grade summary"""
+        DB_FILE: str = "./810_student.db"
+        print("Student Grade Summary")
+        pt: PrettyTable = PrettyTable(field_names=('Name', 'CWID', 'Course', 'Grade', 'Instructor'))
+        for sg in self.student_grades_table_db(DB_FILE):
+            pt.add_row(sg)
         print(pt)
 
         
