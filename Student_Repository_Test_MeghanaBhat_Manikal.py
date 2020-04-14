@@ -105,7 +105,7 @@ class UniversityTest(unittest.TestCase):
         # chdir('./Stevens') # Local Directory for testing purposes
         uni.populate_instructor('./Stevens')
 
-        self.assertEqual(len(uni.instructors), 6)
+        self.assertEqual(len(uni.instructors), 3)
         self.assertEqual(uni.instructors.__contains__('98763'), True)
     
     def test_populate_students(self)-> None:
@@ -115,7 +115,7 @@ class UniversityTest(unittest.TestCase):
         # chdir('./Stevens') # Local Directory for testing purposes
         uni.populate_students('./Stevens')
 
-        self.assertEqual(len(uni.students), 10)
+        self.assertEqual(len(uni.students), 4)
         self.assertEqual(uni.instructors.__contains__('98763'), False)
 
     def file_exception(self,directory:str, path: str)->None:
@@ -129,7 +129,7 @@ class UniversityTest(unittest.TestCase):
         """ Helper function to test ValueError"""
 
         uni = University()
-        for cwid, name, major in uni.file_reader(directory, path, 2, sep=';', header=True):   
+        for cwid, name, major in uni.file_reader(directory, path, 2, sep='\t', header=True):   
             print(tuple([cwid, name, major]))
 
     def test_file_reader(self)-> None:
@@ -138,10 +138,10 @@ class UniversityTest(unittest.TestCase):
         lst: list = []
 
         uni = University()
-        for cwid, name, major in uni.file_reader("Stevens","students.txt", 3, sep=';', header=True):   
+        for cwid, name, major in uni.file_reader("Stevens","students.txt", 3, sep='\t', header=True):   
             lst.append(tuple([cwid, name, major]))
 
-        self.assertEqual(10, len(lst))
+        self.assertEqual(4, len(lst))
         self.assertEqual('10103', lst[0][0])
         self.assertEqual('SFEN', lst[2][2])
 
@@ -158,13 +158,14 @@ class UniversityTest(unittest.TestCase):
         uni.populate_grades('./Stevens')
         uni.populate_major('./Stevens')
         
-        self.assertEqual(len(uni.students['10103'].courses_grades), 4)
+        self.assertEqual(len(uni.students['10103'].courses_grades), 2)
         self.assertEqual(uni.students['10103'].courses_grades['CS 501'], 'B')
-        self.assertEqual(len(uni.instructors['98760'].courses_scount), 4)
-        self.assertEqual(uni.instructors['98760'].courses_scount['SYS 611'], 2)
+        self.assertEqual(len(uni.instructors['98764'].courses_scount), 1)
+        self.assertEqual(uni.instructors['98764'].courses_scount['SYS 611'], 0)
         uni.pretty_print_major()
         uni.pretty_print_students()
         uni.pretty_print_instructor()
+        uni.pretty_print_student_grade()
         
     
     def test_valid_grade(self) -> None:
@@ -174,11 +175,23 @@ class UniversityTest(unittest.TestCase):
         uni.populate_students('./Stevens')
         uni.populate_instructor('./Stevens')
         
-        self.assertEqual(uni.valid_grade('10103','98765'), True)
+        self.assertEqual(uni.valid_grade('10103','98764'), True)
         with self.assertRaises(ValueError):_= uni.valid_grade('1010','98765')
         with self.assertRaises(ValueError):_= uni.valid_grade('10103','9876')
 
+    def test_student_grades_table_db(self) -> None:
+        """ unit test for student_grades_table_db()"""
 
+
+        uni = University()
+        sg_list: List = []
+        for sg in  uni.student_grades_table_db("./810_student.db"):
+            sg_list.append(sg)
+        print(sg_list[1])
+        self.assertEqual(len(sg_list),9)
+        self.assertEqual(sg_list[0][1], '10115')
+        self.assertEqual(sg_list[8][1], '10183')
+       
 
 class InstructorTest(unittest.TestCase):
     """ Unit tests for all the methods in Instructor """
