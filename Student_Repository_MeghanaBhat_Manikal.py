@@ -6,6 +6,8 @@ from prettytable import PrettyTable
 from collections import defaultdict
 import os
 import sqlite3
+from flask import Flask, render_template
+app: Flask = Flask(__name__)
 
 
 class Major:
@@ -145,6 +147,15 @@ class University:
         db: sqlite3.Connection = sqlite3.connect(db_path)
         for row in db.execute("select S.Name Name,S.CWID, G.Course, G.Grade, I.Name Instructor from students S, grades G, instructors I where S.CWID = G.StudentCWID and I.CWID = G.InstructorCWID Order By S.Name"):
             yield(row)
+        db.close()
+        
+    def student_grades_table_web(self, db_path) -> None:
+        """ This method runs the query and yileds dict"""
+
+        db: sqlite3.Connection = sqlite3.connect(db_path)
+        for row in db.execute("select S.Name Name,S.CWID, G.Course, G.Grade, I.Name Instructor from students S, grades G, instructors I where S.CWID = G.StudentCWID and I.CWID = G.InstructorCWID Order By S.Name"):
+            data_dict:Dict[str, str] = { 'name': row[0], 'cwid' : row[1], 'course': row[2], 'grade' : row[3], 'instructor': row[4]} 
+            yield(data_dict)
         db.close()
 
     def __init__(self, directory: Optional[str]=None) -> None:
@@ -324,7 +335,6 @@ class University:
         for sg in self.student_grades_table_db(DB_FILE):
             pt.add_row(sg)
         print(pt)
-
         
 def main() -> None:
     directory_name = './Stevens/'
@@ -338,6 +348,21 @@ def main() -> None:
         print(nd)
     except TypeError as te:
         print(te)
+
+@app.route('/student_courses')
+def student_summary_web() -> str:
+    """ Web page rendering of student summary"""
+
+    directory_name = './Stevens/'
+    uni = University(directory_name)    
+    DB_FILE: str = "./810_student.db"
+    data:List[Dict[str, str]] = []
+    for sg in uni.student_grades_table_web(DB_FILE): 
+        data.append(sg)
+    return render_template('student_courses.html', title = "Stevens Repository", table_title = "Student, Course, Grade and Instructor", students=data)
+    
+app.run(debug=True)
+
   
 if __name__ == '__main__':
     main()
